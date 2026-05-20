@@ -393,7 +393,7 @@ export default function OKRTracker() {
   };
 
   return (
-    <div style={{ background: B.pageBg, minHeight: "100vh", fontFamily: "'Montserrat', sans-serif", color: B.timber, position: "relative" }}>
+    <div style={{ background: B.pageBg, height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Montserrat', sans-serif", color: B.timber, position: "relative", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -403,15 +403,15 @@ export default function OKRTracker() {
         ::-webkit-scrollbar-thumb { background: ${B.tradewindLight}; border-radius: 3px; }
       `}</style>
 
-      <div style={{ padding: "28px 32px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ padding: "16px 28px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.tradewind, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 8 }}>OKR Tracker</div>
-          <div style={{ fontSize: 22, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, letterSpacing: "-0.01em", lineHeight: 1.2 }}>"{data.goal}"</div>
+          <div style={{ fontSize: 18, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, letterSpacing: "-0.01em", lineHeight: 1.2 }}>"{data.goal}"</div>
         </div>
         {savedAt && <div style={{ fontSize: 9, color: B.mutedLight, fontFamily: "'Montserrat', sans-serif", marginTop: 4 }}>saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
       </div>
 
-      <svg width="100%" viewBox="0 0 680 620" preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", height: "auto" }}>
+      <svg width="100%" viewBox="0 0 680 620" preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", flex: "1 1 0", minHeight: 0 }}>
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M2 1L8 5L2 9" fill="none" stroke={B.tradewind} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -438,7 +438,7 @@ export default function OKRTracker() {
               <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{person.owner}</text>
               {(() => { const firstObj = person.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 22} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 24} cy={pos.y + 33} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 6} y={pos.y + 37} textAnchor="middle" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                ? <><circle cx={pos.x - 32} cy={pos.y + 33} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 24} y={pos.y + 37} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 34} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
@@ -457,7 +457,7 @@ export default function OKRTracker() {
               <text x={pos.x} y={pos.y + 2} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{dept.owner}</text>
               {(() => { const firstObj = dept.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 16} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 24} cy={pos.y + 29} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 6} y={pos.y + 33} textAnchor="middle" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                ? <><circle cx={pos.x - 32} cy={pos.y + 29} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 24} y={pos.y + 33} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 30} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
@@ -468,7 +468,7 @@ export default function OKRTracker() {
         <text x={340} y={582} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontWeight={700} letterSpacing="0.1em">DEPARTMENTS — CLICK TO MANAGE</text>
       </svg>
 
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", padding: "0 32px 28px" }}>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 28px 10px", flexShrink: 0 }}>
         {STATUS_OPTIONS.map(s => (
           <div key={s} style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_COLORS[s] }} />
