@@ -272,7 +272,7 @@ function ObjectiveBlock({ obj, idx, onChange, onDelete, isOnly }) {
 function Panel({ node, type, onClose, onUpdate }) {
   const objectives = node.objectives || [];
   const label = type === "leadership" ? node.role : node.name;
-  const sublabel = type === "leadership" ? node.focus : node.subtitle;
+  const sublabel = type === "leadership" ? null : node.subtitle;
   const { status, done, total } = getNodeSummary(objectives);
 
   const addObjective = () => {
@@ -300,7 +300,7 @@ function Panel({ node, type, onClose, onUpdate }) {
               {type === "leadership" ? "Leadership" : "Department"}
             </div>
             <div style={{ fontSize: 20, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, lineHeight: 1.2 }}>{label}</div>
-            <div style={{ fontSize: 12, fontFamily: "'Montserrat', sans-serif", fontWeight: 600, color: B.hederaMid, marginTop: 3 }}>{sublabel}</div>
+            {sublabel && <div style={{ fontSize: 12, fontFamily: "'Montserrat', sans-serif", fontWeight: 600, color: B.hederaMid, marginTop: 3 }}>{sublabel}</div>}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
               {node.owner && (
                 <div style={{ fontSize: 11, fontFamily: "'Montserrat', sans-serif", color: B.muted, display: "flex", alignItems: "center", gap: 5 }}>
@@ -393,7 +393,7 @@ export default function OKRTracker() {
   };
 
   return (
-    <div style={{ background: B.pageBg, minHeight: "100vh", fontFamily: "'Montserrat', sans-serif", color: B.timber, position: "relative" }}>
+    <div style={{ background: B.pageBg, position: "fixed", inset: 0, display: "flex", flexDirection: "column", fontFamily: "'Montserrat', sans-serif", color: B.timber, overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -403,15 +403,15 @@ export default function OKRTracker() {
         ::-webkit-scrollbar-thumb { background: ${B.tradewindLight}; border-radius: 3px; }
       `}</style>
 
-      <div style={{ padding: "28px 32px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ padding: "16px 28px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.tradewind, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 8 }}>OKR Tracker</div>
-          <div style={{ fontSize: 22, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, letterSpacing: "-0.01em", lineHeight: 1.2 }}>"{data.goal}"</div>
+          <div style={{ fontSize: 18, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, letterSpacing: "-0.01em", lineHeight: 1.2 }}>"{data.goal}"</div>
         </div>
-        {savedAt && <div style={{ fontSize: 9, color: B.mutedLight, fontFamily: "'Montserrat', sans-serif", marginTop: 4 }}>saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
+        {savedAt && <div style={{ fontSize: 9, color: B.mutedLight, fontFamily: "'Montserrat', sans-serif" }}>saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
       </div>
 
-      <svg width="100%" viewBox="0 0 680 620" style={{ display: "block", maxHeight: 640 }}>
+      <svg width="100%" viewBox="0 0 680 620" preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", flex: "1 1 0", minHeight: 0 }}>
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M2 1L8 5L2 9" fill="none" stroke={B.tradewind} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -432,14 +432,14 @@ export default function OKRTracker() {
           const { status, done, total } = getNodeSummary(person.objectives);
           return (
             <g key={person.id} style={{ cursor: "pointer" }} onClick={() => setSelected(isSel ? null : { node: person, type: "leadership" })}>
-              <rect x={pos.x - 74} y={pos.y - 36} width={148} height={72} rx={9}
+              <rect x={pos.x - 74} y={pos.y - 36} width={148} height={82} rx={9}
                 fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
-              <text x={pos.x} y={pos.y - 16} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{person.role}</text>
-              <text x={pos.x} y={pos.y} textAnchor="middle" fill={B.hederaMid} fontSize={11} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{person.focus}</text>
-              <text x={pos.x} y={pos.y + 14} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{person.owner}</text>
+              <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{person.role}</text>
+              <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{person.owner}</text>
+              {(() => { const firstObj = person.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 22} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 24} cy={pos.y + 27} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 6} y={pos.y + 31} textAnchor="middle" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
-                : <text x={pos.x} y={pos.y + 29} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
+                ? <><rect x={pos.x - 36} y={pos.y + 29} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 37} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                : <text x={pos.x} y={pos.y + 34} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
           );
@@ -451,13 +451,14 @@ export default function OKRTracker() {
           const { status, done, total } = getNodeSummary(dept.objectives);
           return (
             <g key={dept.id} style={{ cursor: "pointer" }} onClick={() => setSelected(isSel ? null : { node: dept, type: "department" })}>
-              <rect x={pos.x - 74} y={pos.y - 32} width={148} height={64} rx={9}
+              <rect x={pos.x - 74} y={pos.y - 32} width={148} height={72} rx={9}
                 fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
-              <text x={pos.x} y={pos.y - 12} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{dept.name}</text>
-              <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{dept.owner}</text>
+              <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{dept.name}</text>
+              <text x={pos.x} y={pos.y + 2} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{dept.owner}</text>
+              {(() => { const firstObj = dept.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 16} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 24} cy={pos.y + 19} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 6} y={pos.y + 23} textAnchor="middle" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
-                : <text x={pos.x} y={pos.y + 20} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
+                ? <><rect x={pos.x - 36} y={pos.y + 25} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 33} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                : <text x={pos.x} y={pos.y + 30} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
           );
@@ -467,10 +468,10 @@ export default function OKRTracker() {
         <text x={340} y={582} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontWeight={700} letterSpacing="0.1em">DEPARTMENTS — CLICK TO MANAGE</text>
       </svg>
 
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", padding: "0 32px 28px" }}>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 28px 10px", flexShrink: 0 }}>
         {STATUS_OPTIONS.map(s => (
           <div key={s} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_COLORS[s] }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: STATUS_COLORS[s], flexShrink: 0 }} />
             <span style={{ fontSize: 9, color: B.muted, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
           </div>
         ))}
