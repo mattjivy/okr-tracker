@@ -393,7 +393,7 @@ export default function OKRTracker() {
   };
 
   return (
-    <div style={{ background: B.pageBg, height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Montserrat', sans-serif", color: B.timber, position: "relative", overflow: "hidden" }}>
+    <div style={{ background: B.pageBg, position: "fixed", inset: 0, display: "flex", flexDirection: "column", fontFamily: "'Montserrat', sans-serif", color: B.timber, overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -438,7 +438,7 @@ export default function OKRTracker() {
               <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{person.owner}</text>
               {(() => { const firstObj = person.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 22} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 32} cy={pos.y + 33} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 24} y={pos.y + 37} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                ? <><rect x={pos.x - 36} y={pos.y + 29} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 37} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 34} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
@@ -457,7 +457,7 @@ export default function OKRTracker() {
               <text x={pos.x} y={pos.y + 2} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{dept.owner}</text>
               {(() => { const firstObj = dept.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 16} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
               {total > 0
-                ? <><circle cx={pos.x - 32} cy={pos.y + 29} r={3} fill={STATUS_COLORS[status]} /><text x={pos.x - 24} y={pos.y + 33} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
+                ? <><rect x={pos.x - 36} y={pos.y + 25} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 33} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 30} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
               }
             </g>
@@ -471,7 +471,7 @@ export default function OKRTracker() {
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 28px 10px", flexShrink: 0 }}>
         {STATUS_OPTIONS.map(s => (
           <div key={s} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: STATUS_COLORS[s] }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: STATUS_COLORS[s], flexShrink: 0 }} />
             <span style={{ fontSize: 9, color: B.muted, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
           </div>
         ))}
