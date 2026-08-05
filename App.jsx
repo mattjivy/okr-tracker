@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const B = {
   hedera:        "#005545",
@@ -29,7 +35,6 @@ const STATUS_COLORS = {
 function makeObjective(text = "") {
   return { id: Date.now() + Math.random(), text, keyResults: [] };
 }
-
 function makeKR(text = "") {
   return { id: Date.now() + Math.random(), text, status: "not started" };
 }
@@ -37,61 +42,57 @@ function makeKR(text = "") {
 const INITIAL_DATA = {
   goal: "Prepare for the next season of growth",
   leadership: [
-    { id: "ceo",    role: "CEO",              focus: "Sales",         owner: "Daylen", objectives: [] },
-    { id: "meddir", role: "Medical director", focus: "Mental health",  owner: "Amir",   objectives: [] },
-    { id: "coo",    role: "COO",              focus: "EOS",           owner: "Matt",   objectives: [] },
+    { id: "ceo",    role: "CEO",              owner: "Daylen", objectives: [] },
+    { id: "meddir", role: "Medical director", owner: "Amir",   objectives: [] },
+    { id: "coo",    role: "COO",              owner: "Matt",   objectives: [] },
   ],
   departments: [
     {
       id: "ivy", name: "Ivy", subtitle: "In-person model", owner: "Afton",
-      objectives: [
-        { id: 101, text: "", keyResults: [
-          { id: 1, text: "Train/onboard Becky @ YCDF",         status: "not started" },
-          { id: 2, text: "Create facility implementation plan", status: "not started" },
-          { id: 3, text: "Strategic rest",                      status: "not started" },
-        ]},
-      ],
+      objectives: [{ id: 101, text: "", keyResults: [
+        { id: 1, text: "Train/onboard Becky @ YCDF",         status: "not started" },
+        { id: 2, text: "Create facility implementation plan", status: "not started" },
+        { id: 3, text: "Strategic rest",                      status: "not started" },
+      ]}],
     },
     {
       id: "aspen", name: "Aspen", subtitle: "Telehealth model", owner: "Valerie",
-      objectives: [
-        { id: 102, text: "", keyResults: [
-          { id: 4, text: "P+Ps",           status: "not started" },
-          { id: 5, text: "Stabilize team", status: "not started" },
-        ]},
-      ],
+      objectives: [{ id: 102, text: "", keyResults: [
+        { id: 4, text: "P+Ps",           status: "not started" },
+        { id: 5, text: "Stabilize team", status: "not started" },
+      ]}],
     },
     {
       id: "bizops", name: "Business ops", subtitle: "Internal operations", owner: "Isaac",
-      objectives: [
-        { id: 103, text: "", keyResults: [
-          { id: 6, text: "AI plan",                                           status: "not started" },
-          { id: 7, text: "IT / tech resourcing",                              status: "not started" },
-          { id: 8, text: "Process formalization, documentation, SOS manuals", status: "not started" },
-          { id: 9, text: "Paylocity implementation",                          status: "not started" },
-        ]},
-      ],
+      objectives: [{ id: 103, text: "", keyResults: [
+        { id: 6, text: "AI plan",                                           status: "not started" },
+        { id: 7, text: "IT / tech resourcing",                              status: "not started" },
+        { id: 8, text: "Process formalization, documentation, SOS manuals", status: "not started" },
+        { id: 9, text: "Paylocity implementation",                          status: "not started" },
+      ]}],
     },
     {
       id: "quality", name: "Quality", subtitle: "Quality assurance", owner: "Shyra",
-      objectives: [
-        { id: 104, text: "", keyResults: [
-          { id: 10, text: "Emergency preparedness", status: "not started" },
-          { id: 11, text: "Form standardization",   status: "not started" },
-        ]},
-      ],
+      objectives: [{ id: 104, text: "", keyResults: [
+        { id: 10, text: "Emergency preparedness", status: "not started" },
+        { id: 11, text: "Form standardization",   status: "not started" },
+      ]}],
     },
   ],
 };
 
-const STORAGE_KEY = "okr_hub_v6";
-
-function loadData() {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; }
-  catch { return null; }
+async function loadFromDB() {
+  const { data, error } = await supabase
+    .from("okr_data")
+    .select("data")
+    .eq("id", "main")
+    .single();
+  if (error || !data) return null;
+  return data.data;
 }
-function saveData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+
+async function saveToDB(payload) {
+  await supabase.from("okr_data").upsert({ id: "main", data: payload, updated_at: new Date().toISOString() });
 }
 
 function getNodeSummary(objectives) {
@@ -188,78 +189,42 @@ function InlineEdit({ value, onChange, placeholder, multiline }) {
 function ObjectiveBlock({ obj, idx, onChange, onDelete, isOnly }) {
   const [newKR, setNewKR] = useState("");
   const krs = obj.keyResults || [];
-
-  const addKR = () => {
-    if (!newKR.trim()) return;
-    onChange({ ...obj, keyResults: [...krs, makeKR(newKR.trim())] });
-    setNewKR("");
-  };
+  const addKR = () => { if (!newKR.trim()) return; onChange({ ...obj, keyResults: [...krs, makeKR(newKR.trim())] }); setNewKR(""); };
   const updateKR = (id, changes) => onChange({ ...obj, keyResults: krs.map(k => k.id === id ? { ...k, ...changes } : k) });
   const deleteKR = (id) => onChange({ ...obj, keyResults: krs.filter(k => k.id !== id) });
-
   return (
-    <div style={{ marginBottom: 24, background: B.cardBg, border: `1px solid ${B.border}`, borderRadius: 10, overflow: "hidden" }}>
-      {/* Objective header */}
-      <div style={{ background: B.hederaLight, padding: "10px 14px", display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div style={{
-          fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
-          color: B.hedera, textTransform: "uppercase", letterSpacing: "0.12em",
-          marginTop: 3, flexShrink: 0,
-        }}>O{idx + 1}</div>
+    <div style={{ marginBottom: 24, background: B.cardBg, border: `1px solid ${B.border}`, borderRadius: 10 }}>
+      <div style={{ background: B.hederaLight, padding: "10px 14px", display: "flex", alignItems: "flex-start", gap: 10, borderRadius: "10px 10px 0 0" }}>
+        <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.hedera, textTransform: "uppercase", letterSpacing: "0.12em", marginTop: 3, flexShrink: 0 }}>O{idx + 1}</div>
         <div style={{ flex: 1 }}>
-          <InlineEdit
-            value={obj.text}
-            onChange={v => onChange({ ...obj, text: v })}
-            placeholder="Click to write objective..."
-            multiline
-          />
+          <InlineEdit value={obj.text} onChange={v => onChange({ ...obj, text: v })} placeholder="Click to write objective..." multiline />
         </div>
         {!isOnly && (
           <button onClick={onDelete} style={{ background: "none", border: "none", color: B.mutedLight, cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0, marginTop: 1 }}
             onMouseEnter={e => e.currentTarget.style.color = "#c0392b"}
             onMouseLeave={e => e.currentTarget.style.color = B.mutedLight}
-            title="Remove objective"
           >×</button>
         )}
       </div>
-
-      {/* KRs */}
       <div style={{ padding: "6px 14px 10px" }}>
-        <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.muted, textTransform: "uppercase", letterSpacing: "0.12em", margin: "8px 0 6px" }}>
-          Key results
-        </div>
+        <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.muted, textTransform: "uppercase", letterSpacing: "0.12em", margin: "8px 0 6px" }}>Key results</div>
         {krs.map((kr, ki) => (
           <div key={kr.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 0", borderBottom: `1px solid ${B.hederaLight}` }}>
-            <div style={{ fontSize: 10, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.mutedLight, marginTop: 2, minWidth: 18, flexShrink: 0 }}>
-              {ki + 1}
-            </div>
+            <div style={{ fontSize: 10, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.mutedLight, marginTop: 2, minWidth: 18, flexShrink: 0 }}>{ki + 1}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <InlineEdit
-                value={kr.text}
-                onChange={v => updateKR(kr.id, { text: v })}
-                placeholder="Key result..."
-              />
+              <InlineEdit value={kr.text} onChange={v => updateKR(kr.id, { text: v })} placeholder="Key result..." />
             </div>
             <StatusPill status={kr.status} onChange={s => updateKR(kr.id, { status: s })} />
-            <button onClick={() => deleteKR(kr.id)}
-              style={{ background: "none", border: "none", color: B.mutedLight, cursor: "pointer", fontSize: 15, padding: 0, lineHeight: 1, flexShrink: 0, marginTop: 1 }}
+            <button onClick={() => deleteKR(kr.id)} style={{ background: "none", border: "none", color: B.mutedLight, cursor: "pointer", fontSize: 15, padding: 0, lineHeight: 1, flexShrink: 0, marginTop: 1 }}
               onMouseEnter={e => e.currentTarget.style.color = "#c0392b"}
               onMouseLeave={e => e.currentTarget.style.color = B.mutedLight}
             >×</button>
           </div>
         ))}
-
         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-          <input value={newKR} onChange={e => setNewKR(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") addKR(); }}
-            placeholder="Add key result..."
-            style={{ flex: 1, background: B.pageBg, border: `1.5px solid ${B.border}`, borderRadius: 5, padding: "5px 8px", color: B.timber, fontSize: 12, fontFamily: "'Montserrat', sans-serif", outline: "none" }}
-          />
-          <button onClick={addKR} style={{
-            background: B.hedera, border: "none", borderRadius: 5, color: "#fff",
-            cursor: "pointer", padding: "5px 12px", fontSize: 11,
-            fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
-          }}
+          <input value={newKR} onChange={e => setNewKR(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addKR(); }} placeholder="Add key result..."
+            style={{ flex: 1, background: B.pageBg, border: `1.5px solid ${B.border}`, borderRadius: 5, padding: "5px 8px", color: B.timber, fontSize: 12, fontFamily: "'Montserrat', sans-serif", outline: "none" }} />
+          <button onClick={addKR} style={{ background: B.hedera, border: "none", borderRadius: 5, color: "#fff", cursor: "pointer", padding: "5px 12px", fontSize: 11, fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}
             onMouseEnter={e => e.currentTarget.style.background = B.hederaMid}
             onMouseLeave={e => e.currentTarget.style.background = B.hedera}
           >Add</button>
@@ -273,46 +238,22 @@ function Panel({ node, type, onClose, onUpdate }) {
   const objectives = node.objectives || [];
   const label = type === "leadership" ? node.role : node.name;
   const sublabel = type === "leadership" ? null : node.subtitle;
-  const { status, done, total } = getNodeSummary(objectives);
-
-  const addObjective = () => {
-    if (objectives.length >= 3) return;
-    onUpdate({ ...node, objectives: [...objectives, makeObjective()] });
-  };
+  const { done, total } = getNodeSummary(objectives);
+  const addObjective = () => { if (objectives.length >= 3) return; onUpdate({ ...node, objectives: [...objectives, makeObjective()] }); };
   const updateObjective = (id, updated) => onUpdate({ ...node, objectives: objectives.map(o => o.id === id ? updated : o) });
   const deleteObjective = (id) => onUpdate({ ...node, objectives: objectives.filter(o => o.id !== id) });
-
   return (
-    <div style={{
-      position: "fixed", top: 0, right: 0, width: 420, height: "100vh",
-      background: B.pageBg, borderLeft: `1.5px solid ${B.border}`,
-      boxShadow: "-12px 0 40px rgba(0,40,30,0.1)",
-      display: "flex", flexDirection: "column", zIndex: 300,
-      animation: "slideIn 0.18s ease",
-    }}>
-      <style>{`@keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }`}</style>
-
-      {/* Header */}
+    <div style={{ position: "fixed", top: 0, right: 0, width: 420, height: "100vh", background: B.pageBg, borderLeft: `1.5px solid ${B.border}`, boxShadow: "-12px 0 40px rgba(0,40,30,0.1)", display: "flex", flexDirection: "column", zIndex: 300, animation: "slideIn 0.18s ease" }}>
+      <style>{"@keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }"}</style>
       <div style={{ padding: "22px 24px 16px", borderBottom: `1px solid ${B.border}`, flexShrink: 0, background: "#fff" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.tradewind, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 5 }}>
-              {type === "leadership" ? "Leadership" : "Department"}
-            </div>
+            <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.tradewind, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 5 }}>{type === "leadership" ? "Leadership" : "Department"}</div>
             <div style={{ fontSize: 20, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, lineHeight: 1.2 }}>{label}</div>
             {sublabel && <div style={{ fontSize: 12, fontFamily: "'Montserrat', sans-serif", fontWeight: 600, color: B.hederaMid, marginTop: 3 }}>{sublabel}</div>}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-              {node.owner && (
-                <div style={{ fontSize: 11, fontFamily: "'Montserrat', sans-serif", color: B.muted, display: "flex", alignItems: "center", gap: 5 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: B.leather }} />
-                  {node.owner}
-                </div>
-              )}
-              {total > 0 && (
-                <div style={{ fontSize: 11, fontFamily: "'Montserrat', sans-serif", color: B.muted }}>
-                  {done}/{total} KRs complete
-                </div>
-              )}
+              {node.owner && <div style={{ fontSize: 11, fontFamily: "'Montserrat', sans-serif", color: B.muted, display: "flex", alignItems: "center", gap: 5 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: B.leather }} />{node.owner}</div>}
+              {total > 0 && <div style={{ fontSize: 11, fontFamily: "'Montserrat', sans-serif", color: B.muted }}>{done}/{total} KRs complete</div>}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: B.mutedLight, cursor: "pointer", fontSize: 22, lineHeight: 1, padding: 0, flexShrink: 0 }}
@@ -321,33 +262,19 @@ function Panel({ node, type, onClose, onUpdate }) {
           >×</button>
         </div>
       </div>
-
-      {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
         {objectives.map((obj, idx) => (
-          <ObjectiveBlock
-            key={obj.id}
-            obj={obj}
-            idx={idx}
+          <ObjectiveBlock key={obj.id} obj={obj} idx={idx}
             onChange={updated => updateObjective(obj.id, updated)}
             onDelete={() => deleteObjective(obj.id)}
             isOnly={objectives.length === 1}
           />
         ))}
-
         {objectives.length < 3 && (
-          <button onClick={addObjective} style={{
-            width: "100%", padding: "10px", background: "none",
-            border: `1.5px dashed ${B.border}`, borderRadius: 8,
-            color: B.muted, cursor: "pointer", fontSize: 12,
-            fontFamily: "'Montserrat', sans-serif", fontWeight: 600,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          }}
+          <button onClick={addObjective} style={{ width: "100%", padding: "10px", background: "none", border: `1.5px dashed ${B.border}`, borderRadius: 8, color: B.muted, cursor: "pointer", fontSize: 12, fontFamily: "'Montserrat', sans-serif", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = B.tradewind; e.currentTarget.style.color = B.hedera; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.muted; }}
-          >
-            + Add objective {objectives.length > 0 ? `(${objectives.length}/3)` : ""}
-          </button>
+          >+ Add objective {objectives.length > 0 ? `(${objectives.length}/3)` : ""}</button>
         )}
       </div>
     </div>
@@ -359,38 +286,39 @@ const LEADER_POSITIONS = [{ x: 120, y: 90 }, { x: 340, y: 60 }, { x: 560, y: 90 
 const DEPT_POSITIONS   = [{ x: 100, y: 490 }, { x: 240, y: 530 }, { x: 440, y: 530 }, { x: 580, y: 490 }];
 
 export default function OKRTracker() {
-  const [data, setData] = useState(() => {
-    const stored = loadData();
-    if (stored) {
-      // migrate old data formats
-      stored.departments = stored.departments.map(d => {
-        if (!d.objectives) {
-          const krs = d.keyResults || d.items || [];
-          return { ...d, objectives: [{ id: Date.now() + Math.random(), text: d.objective || "", keyResults: krs }] };
-        }
-        return d;
-      });
-      stored.leadership = stored.leadership.map(l => {
-        if (!l.objectives) {
-          const krs = l.keyResults || [];
-          return { ...l, objectives: krs.length ? [{ id: Date.now() + Math.random(), text: l.objective || "", keyResults: krs }] : [] };
-        }
-        return l;
-      });
-      return stored;
-    }
-    return INITIAL_DATA;
-  });
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [savedAt, setSavedAt] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => { saveData(data); setSavedAt(new Date()); }, [data]);
+  useEffect(() => {
+    loadFromDB().then(d => {
+      setData(d || INITIAL_DATA);
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!data || loading) return;
+    const t = setTimeout(() => {
+      setSaving(true);
+      saveToDB(data).then(() => { setSavedAt(new Date()); setSaving(false); });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [data, loading]);
 
   const updateLeader = (id, u) => setData(d => ({ ...d, leadership: d.leadership.map(l => l.id === id ? u : l) }));
   const updateDept = (id, u) => {
     setData(d => ({ ...d, departments: d.departments.map(dep => dep.id === id ? u : dep) }));
     if (selected?.node?.id === id) setSelected(s => ({ ...s, node: u }));
   };
+
+  if (loading) return (
+    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: B.pageBg, fontFamily: "'Montserrat', sans-serif", fontSize: 13, color: B.muted }}>
+      Loading...
+    </div>
+  );
 
   return (
     <div style={{ background: B.pageBg, position: "fixed", inset: 0, display: "flex", flexDirection: "column", fontFamily: "'Montserrat', sans-serif", color: B.timber, overflow: "hidden" }}>
@@ -408,7 +336,9 @@ export default function OKRTracker() {
           <div style={{ fontSize: 9, fontFamily: "'Montserrat', sans-serif", fontWeight: 700, color: B.tradewind, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 8 }}>OKR Tracker</div>
           <div style={{ fontSize: 18, fontFamily: "'Playfair Display', serif", fontWeight: 700, color: B.timber, letterSpacing: "-0.01em", lineHeight: 1.2 }}>"{data.goal}"</div>
         </div>
-        {savedAt && <div style={{ fontSize: 9, color: B.mutedLight, fontFamily: "'Montserrat', sans-serif", marginTop: 4 }}>saved {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>}
+        <div style={{ fontSize: 9, color: B.mutedLight, fontFamily: "'Montserrat', sans-serif", textAlign: "right" }}>
+          {saving ? "saving..." : savedAt ? `saved ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+        </div>
       </div>
 
       <svg width="100%" viewBox="0 0 680 620" preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", flex: "1 1 0", minHeight: 0 }}>
@@ -430,13 +360,14 @@ export default function OKRTracker() {
           const pos = LEADER_POSITIONS[i];
           const isSel = selected?.node?.id === person.id;
           const { status, done, total } = getNodeSummary(person.objectives);
+          const firstObj = person.objectives?.[0]?.text;
+          const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "..." : firstObj) : null;
           return (
             <g key={person.id} style={{ cursor: "pointer" }} onClick={() => setSelected(isSel ? null : { node: person, type: "leadership" })}>
-              <rect x={pos.x - 74} y={pos.y - 36} width={148} height={82} rx={9}
-                fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
+              <rect x={pos.x - 74} y={pos.y - 36} width={148} height={82} rx={9} fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
               <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{person.role}</text>
               <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{person.owner}</text>
-              {(() => { const firstObj = person.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 22} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
+              {preview && <text x={pos.x} y={pos.y + 22} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text>}
               {total > 0
                 ? <><rect x={pos.x - 36} y={pos.y + 29} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 37} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 34} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
@@ -449,13 +380,14 @@ export default function OKRTracker() {
           const pos = DEPT_POSITIONS[i];
           const isSel = selected?.node?.id === dept.id;
           const { status, done, total } = getNodeSummary(dept.objectives);
+          const firstObj = dept.objectives?.[0]?.text;
+          const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "..." : firstObj) : null;
           return (
             <g key={dept.id} style={{ cursor: "pointer" }} onClick={() => setSelected(isSel ? null : { node: dept, type: "department" })}>
-              <rect x={pos.x - 74} y={pos.y - 32} width={148} height={72} rx={9}
-                fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
+              <rect x={pos.x - 74} y={pos.y - 32} width={148} height={72} rx={9} fill={isSel ? B.hederaLight : B.cardBg} stroke={isSel ? B.hedera : B.tradewind} strokeWidth={isSel ? 2 : 1.5} />
               <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill={B.timber} fontSize={13} fontWeight={700} fontFamily="'Montserrat', sans-serif">{dept.name}</text>
               <text x={pos.x} y={pos.y + 2} textAnchor="middle" fill={B.muted} fontSize={9} fontFamily="'Montserrat', sans-serif">{dept.owner}</text>
-              {(() => { const firstObj = dept.objectives?.[0]?.text; const preview = firstObj ? (firstObj.length > 25 ? firstObj.slice(0, 25) + "…" : firstObj) : null; return preview ? <text x={pos.x} y={pos.y + 16} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text> : null; })()}
+              {preview && <text x={pos.x} y={pos.y + 16} textAnchor="middle" fill={B.hederaMid} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">{preview}</text>}
               {total > 0
                 ? <><rect x={pos.x - 36} y={pos.y + 25} width={7} height={7} rx={3.5} fill={STATUS_COLORS[status]} /><text x={pos.x - 25} y={pos.y + 33} textAnchor="start" fill={B.timberMid} fontSize={9} fontFamily="'Montserrat', sans-serif" fontWeight={600}>{done}/{total} KRs</text></>
                 : <text x={pos.x} y={pos.y + 30} textAnchor="middle" fill={B.mutedLight} fontSize={8} fontFamily="'Montserrat', sans-serif" fontStyle="italic">click to add OKRs</text>
@@ -480,10 +412,7 @@ export default function OKRTracker() {
       {selected && (
         <>
           <div onClick={() => setSelected(null)} style={{ position: "fixed", inset: 0, zIndex: 250 }} />
-          <Panel
-            node={selected.node}
-            type={selected.type}
-            onClose={() => setSelected(null)}
+          <Panel node={selected.node} type={selected.type} onClose={() => setSelected(null)}
             onUpdate={updated => {
               if (selected.type === "leadership") updateLeader(updated.id, updated);
               else updateDept(updated.id, updated);
