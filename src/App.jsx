@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -110,25 +111,54 @@ function getNodeSummary(objectives) {
 
 function StatusPill({ status, onChange }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef();
+  const [menuPos, setMenuPos] = useState(null);
+  const btnRef = useRef();
+  const menuRef = useRef();
+
   useEffect(() => {
     if (!open) return;
-    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const h = e => {
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      if (menuRef.current && menuRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const place = () => {
+      const rect = btnRef.current.getBoundingClientRect();
+      const menuHeight = STATUS_OPTIONS.length * 34 + 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < menuHeight + 8 && rect.top > menuHeight + 8;
+      setMenuPos({
+        left: Math.min(rect.right - 145, window.innerWidth - 145 - 8),
+        top: openUpward ? rect.top - menuHeight - 4 : rect.bottom + 4,
+      });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open]);
+
   return (
-    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
-      <button onClick={() => setOpen(o => !o)} style={{
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <button ref={btnRef} onClick={() => setOpen(o => !o)} style={{
         fontSize: 10, fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
         padding: "3px 9px", borderRadius: 20,
         border: `1.5px solid ${STATUS_COLORS[status]}`,
         background: STATUS_COLORS[status] + "18", color: STATUS_COLORS[status],
         cursor: "pointer", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap",
       }}>{status}</button>
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 300,
+      {open && menuPos && createPortal(
+        <div ref={menuRef} style={{
+          position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 1000,
           background: "#fff", border: `1px solid ${B.border}`, borderRadius: 8,
           padding: 4, minWidth: 145, boxShadow: "0 8px 24px rgba(0,40,30,0.12)",
         }}>
@@ -146,7 +176,8 @@ function StatusPill({ status, onChange }) {
               {s}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
